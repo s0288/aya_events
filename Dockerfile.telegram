@@ -1,0 +1,15 @@
+FROM python:3.7-slim
+
+WORKDIR '/app'
+
+# install dependencies
+COPY requirements_telegram.txt .
+RUN pip install -r requirements_telegram.txt
+# install module
+COPY setup.py .
+RUN python setup.py develop
+
+# mount relevant directories
+COPY ./telegram .
+
+CMD python run_telegram.py
