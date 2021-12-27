@@ -8,6 +8,10 @@ import time
 import logging
 import sys
 
+# load .env variables
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
 from event_listener import EventListener
 from event_creator import respond_to_input
 
