@@ -17,6 +17,22 @@ WEEK_INT_DICT = {"montag": 0, "dienstag": 1, "mittwoch": 2, "donnerstag": 3, "fr
 USER_DICT = {}
 
 def respond_to_input(chat_id, message, message_id, user_id, original_message):
+    def _get_rules():
+        response = "Hallo 🙂. Diese Gruppe dient zum Vereinbaren von Fastensitzungen.\n\n"
+        response += "Beachte hierfür bitte folgende Regeln:\n\n"
+        response += "- 1.) Gib einen Namen ein, um dich zu registrieren\n"
+        response += "(oder um deinen Namen zu ändern):\n\n"
+        response += "/name [dein Name]\n"
+        response += "Beispiel: /name alex\n\n"
+        response += "- 2.) Du kannst eine Fastengruppe erstellen, indem du Folgendes eingibst "
+        response += "(Wichtig 1: Vermeide Kommas oder Wörter wie 'Uhr', 'Stunden', ...)\n"
+        response += "(Wichtig 2: Du kannst nur für die laufende Woche eine Fastensitzung einstellen):\n\n"
+        response += "/fasten [Wochentag] [Startuhrzeit] [Länge des Fastens]\n"
+        response += "Beispiel 1: /fasten Dienstag 17:00 36\n"
+        response += "Beispiel 2: /fasten di 17 36\n\n"
+        response += "- 3.) Du nimmst an einer Fastengruppe teil, indem du auf 'Dabei' klickst.\n"
+        response += "Indem du 'Nicht dabei' klickst, entfernst du dich wieder von der Gruppe."
+        return response
     first_word = message.split(' ')[0].lower()
     if first_word == '/name':
         name = message.split(' ')[1]
@@ -25,21 +41,7 @@ def respond_to_input(chat_id, message, message_id, user_id, original_message):
         _delete_message_from_telegram(chat_id, message_id)
         _send_message_to_event_telegram(chat_id, response)
     elif '/regeln' in first_word:
-        response = "Hallo 🙂\n\n"
-        response += "Wir sind eine Gemeinschaft zum gemeinsamen Fasten. "
-        response += "Dieser Kanal dient ausschließlich zum Vereinbaren von Fastengruppen.\n\n"
-        response += "Beachte hierfür bitte folgende Regeln:\n\n"
-        response += "- 1.) Gib einen Namen ein, um dich zu registrieren\n"
-        response += "(oder um deinen Namen zu ändern):\n\n"
-        response += "/name [dein Name]\n"
-        response += "Beispiel: /name alex\n\n"
-        response += "- 2.) Du kannst eine Fastengruppe erstellen, indem du Folgendes eingibst "
-        response += "(Wichtig: Vermeide Kommas oder Wörter wie 'Uhr', 'Stunden', ...):\n\n"
-        response += "/fasten [Wochentag] [Startuhrzeit] [Länge des Fastens]\n"
-        response += "Beispiel 1: /fasten Dienstag 17:00 36\n"
-        response += "Beispiel 2: /fasten di 17 36\n\n"
-        response += "- 3.) Du nimmst an einer Fastengruppe teil, indem du auf 'Dabei' klickst.\n"
-        response += "Indem du 'Nicht dabei' klickst, entfernst du dich wieder von der Gruppe."
+        response = _get_rules()
         _delete_message_from_telegram(chat_id, message_id)
         _send_message_to_event_telegram(chat_id, response)
     elif USER_DICT.get(f"{user_id}"): # check if the user set a name yet
@@ -63,6 +65,7 @@ def respond_to_input(chat_id, message, message_id, user_id, original_message):
         response = "Bitte erstelle zuerst einen Namen, indem du '/name [dein Name]' schreibst.\n\n"
         response += "Beispiel:\n"
         response += "/name alex\n\n"
+        response += "Unsere Regeln findest du unter /regeln."
         _send_message_to_event_telegram(chat_id, response)
 
 def _send_message_to_event_telegram(chat_id, message_text, inline_keyboard=None):

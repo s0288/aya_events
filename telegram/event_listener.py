@@ -39,7 +39,6 @@ class EventListener:
                             next_update_id  int     (min(update_id)+1 in json)
         """
         url = URL + "getUpdates?timeout=600"
-        print(url)
         if offset:
             url += "&offset={}".format(offset)
         
@@ -134,3 +133,4 @@ class EventListener:
 if __name__ == '__main__':
     next_update_id = None
     print(EventListener.get_update_and_next_update_id(next_update_id))
+    
