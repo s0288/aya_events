@@ -17,10 +17,6 @@ WEEK_INT_DICT = {"montag": 0, "dienstag": 1, "mittwoch": 2, "donnerstag": 3, "fr
 USER_DICT = {}
 
 def respond_to_input(chat_id, message, message_id, user_id, original_message):
-    print(chat_id)
-    print(message_id)
-    print(message)
-    print(user_id)
     def _get_rules():
         response = "Hallo 🙂. Diese Gruppe dient zum Vereinbaren von Fastensitzungen.\n\n"
         response += "Beachte hierfür bitte folgende Regeln:\n\n"
@@ -40,8 +36,11 @@ def respond_to_input(chat_id, message, message_id, user_id, original_message):
     first_word = message.split(' ')[0].lower()
     if first_word == '/name':
         name = message.split(' ')[1]
-        response = f"Willkommen, {name}"
-        USER_DICT[f"{user_id}"] = name
+        if name in USER_DICT.values():
+            response = f"Name bereits vergeben. Bitte wähle einen anderen mit /name [dein Name]"
+        else:
+            USER_DICT[f"{user_id}"] = name
+            response = f"Willkommen, {name}"
         _delete_message_from_telegram(chat_id, message_id)
         _send_message_to_event_telegram(chat_id, response)
     elif '/regeln' in first_word:
@@ -137,12 +136,10 @@ def _remove_participant(chat_id, message_id, name, original_message, inline_keyb
     """
     Edit original message to add new fasting participant.
     """
-    print(original_message)
-    participants = original_message.split("- Teilnehmer:")[1]
-    if name in participants:
-        participants = re.sub(name, "", participants)
-        original_message = original_message.split("- Teilnehmer: ")[0] + "- Teilnehmer: " + participants
-    parsed_message = urllib.parse.quote_plus(original_message)
+    message_wo_participants, participants = original_message.split('- Teilnehmer:') 
+    parsed_message = urllib.parse.quote_plus(
+            message_wo_participants + '- Teilnehmer:' + re.sub(name, "", participants)
+        )
     url = URL + f"editMessageText?chat_id={chat_id}&message_id={message_id}&text={parsed_message}"
     url += "&parse_mode=HTML&disable_web_page_preview=true"
     url += f"&reply_markup={inline_keyboard}"
