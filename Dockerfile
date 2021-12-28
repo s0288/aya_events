@@ -3,13 +3,13 @@ FROM python:3.7-slim
 WORKDIR '/app'
 
 # install dependencies
-COPY requirements_telegram.txt .
-RUN pip install -r requirements_telegram.txt
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 # install module
 COPY setup.py .
 RUN python setup.py develop
 
 # mount relevant directories
-COPY ./telegram .
+COPY ./src .
 
 CMD python run_telegram.py
