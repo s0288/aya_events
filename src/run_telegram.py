@@ -39,7 +39,6 @@ def main(chat_id=None):
                 logging.info(f"responded to input")
         except Exception as e:
             logging.exception(e)
-            break
 
         time.sleep(0.5)
         sys.stdout.write('.'); sys.stdout.flush()
