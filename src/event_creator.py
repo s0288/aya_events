@@ -59,6 +59,8 @@ def respond_to_input(chat_id, message, message_id, user_id, original_message):
         elif first_word == '/absagen':
             keyboard = _create_fast_event_keyboard()
             _remove_participant(chat_id, message_id, USER_DICT.get(f"{user_id}"), original_message, keyboard)
+        elif first_word == '/loeschen':
+            _delete_message_from_telegram(chat_id, message_id)
         else:
             response = "Bitte schreibe Nachrichten gemäß der Regeln. Deine Nachricht wurde gelöscht.\n\n"
             response += "Um die Regeln anzuzeigen, gib /regeln ein."
@@ -116,8 +118,9 @@ def _create_fast_event_keyboard():
         e.g.: {"inline_keyboard":[[{"text": "Hello", "callback_url": "Hello", "url": "", "callback_data": "Hello"},
                 {"text": "No", "callback_url": "Google", "url": "http://www.google.com/"}]]}
     """
-    keyboard = [{"text": "Dabei", "callback_url": "/teilnehmen", "url": "", "callback_data": "/teilnehmen"}, \
-        {"text": "Nicht dabei", "callback_url": "/absagen", "url": "", "callback_data": "/absagen"}]
+    keyboard = [{"text": "Dabei", "callback_url": "/teilnehmen", "url": "", "callback_data": "/teilnehmen"},
+                {"text": "Nicht dabei", "callback_url": "/absagen", "url": "", "callback_data": "/absagen"},
+                {"text": "Löschen", "callback_url": "/loeschen", "url": "", "callback_data": "/loeschen"}]
     inline_keyboard = {"inline_keyboard": [keyboard]} # required format for Telegram
     return json.dumps(inline_keyboard)
 
