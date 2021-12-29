@@ -8,15 +8,33 @@ import json
 import re
 import requests
 
+from utils import db_conn
 
 URL = f"https://api.telegram.org/bot{os.environ.get('TELEGRAM_TOKEN')}/"
 WEEK_ABBR_DICT = {"mo": "montag", "di": "dienstag", "mi": "mittwoch", "do": "donnerstag", \
     "fr": "freitag", "sa": "samstag", "so": "sonntag"}
 WEEK_INT_DICT = {"montag": 0, "dienstag": 1, "mittwoch": 2, "donnerstag": 3, "freitag": 4, \
     "samstag": 5, "sonntag": 6}
-USER_DICT = {}
 
-def respond_to_input(chat_id, message, message_id, user_id, original_message):
+def _load_users():
+    """get the most recent telegram_id-name combination for each telegram_id"""
+    with db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                select u.telegram_id, u.name 
+                from {os.environ.get('DB_PROD_LEVEL')}.users u
+                join (
+                        select telegram_id, max(status_timestamp) as max_timestamp 
+                        from {os.environ.get('DB_PROD_LEVEL')}.users group by telegram_id
+                    ) s
+                on u.telegram_id = s.telegram_id and u.status_timestamp = s.max_timestamp
+                ;""")
+            df = cur.fetchall()
+    return {row[0]: row[1] for row in df}
+USER_DICT = _load_users()
+
+
+def respond_to_input(chat_id, message, message_id, telegram_id, original_message):
     def _get_rules():
         response = "Hallo 🙂. Diese Gruppe dient zum Vereinbaren von Fastensitzungen.\n\n"
         response += "Beachte hierfür bitte folgende Regeln:\n\n"
@@ -39,39 +57,40 @@ def respond_to_input(chat_id, message, message_id, user_id, original_message):
         if name in USER_DICT.values():
             response = f"Name bereits vergeben. Bitte wähle einen anderen mit /name [dein Name]"
         else:
-            USER_DICT[f"{user_id}"] = name
             response = f"Willkommen, {name}"
+            USER_DICT[telegram_id] = name
+            _write_user_to_db(telegram_id, name)
         _delete_message_from_telegram(chat_id, message_id)
-        _send_message_to_event_telegram(chat_id, response)
+        _send_message_to_event_telegram(chat_id, response, _create_del_msg_keyboard())
     elif '/regeln' in first_word:
         response = _get_rules()
         _delete_message_from_telegram(chat_id, message_id)
-        _send_message_to_event_telegram(chat_id, response)
-    elif USER_DICT.get(f"{user_id}"): # check if the user set a name yet
+        _send_message_to_event_telegram(chat_id, response, _create_del_msg_keyboard())
+    elif USER_DICT.get(telegram_id): # check if the user set a name yet
         if first_word == '/fasten':
-            response = _extract_fasten_elements(user_id, message)
+            response = _extract_fasten_elements(telegram_id, message)
             _delete_message_from_telegram(chat_id, message_id)
             keyboard = _create_fast_event_keyboard()
             _send_message_to_event_telegram(chat_id, response, keyboard)
         elif first_word == '/teilnehmen':
             keyboard = _create_fast_event_keyboard()
-            _add_participant(chat_id, message_id, USER_DICT.get(f"{user_id}"), original_message, keyboard)
+            _add_participant(chat_id, message_id, USER_DICT.get(telegram_id), original_message, keyboard)
         elif first_word == '/absagen':
             keyboard = _create_fast_event_keyboard()
-            _remove_participant(chat_id, message_id, USER_DICT.get(f"{user_id}"), original_message, keyboard)
+            _remove_participant(chat_id, message_id, USER_DICT.get(telegram_id), original_message, keyboard)
         elif first_word == '/loeschen':
             _delete_message_from_telegram(chat_id, message_id)
         else:
             response = "Bitte schreibe Nachrichten gemäß der Regeln. Deine Nachricht wurde gelöscht.\n\n"
             response += "Um die Regeln anzuzeigen, gib /regeln ein."
             _delete_message_from_telegram(chat_id, message_id)
-            _send_message_to_event_telegram(chat_id, response)
+            _send_message_to_event_telegram(chat_id, response, _create_del_msg_keyboard())
     else: # if the user sends a msg without having set a name, tell him to create a name first.
         response = "Bitte erstelle zuerst einen Namen, indem du '/name [dein Name]' schreibst.\n\n"
         response += "Beispiel:\n"
         response += "/name alex\n\n"
         response += "Unsere Regeln findest du unter /regeln."
-        _send_message_to_event_telegram(chat_id, response)
+        _send_message_to_event_telegram(chat_id, response, _create_del_msg_keyboard())
 
 def _send_message_to_event_telegram(chat_id, message_text, inline_keyboard=None):
     parsed_message = urllib.parse.quote_plus(message_text)
@@ -88,7 +107,7 @@ def _delete_message_from_telegram(chat_id, message_id):
     url = URL + f"deleteMessage?chat_id={chat_id}&message_id={message_id}"
     requests.get(url) # post msg to Telegram server
 
-def _extract_fasten_elements(user_id, message):
+def _extract_fasten_elements(telegram_id, message):
     convert_tag = lambda x : WEEK_ABBR_DICT[f"{x}"] if len(x) == 2 else x
     start_tag = convert_tag(message.split(' ')[1].lower())
     start_date = _calculate_date(start_tag)
@@ -98,7 +117,7 @@ def _extract_fasten_elements(user_id, message):
     response = 'Fasten-Gruppe:\n'
     response += f"- Start: {start_tag.capitalize()}, {start_date}, {start_zeit} Uhr\n"
     response += f"- Ziel: {ziel} Stunden\n"
-    response += f"- Teilnehmer: {USER_DICT.get(f'{user_id}')}"
+    response += f"- Teilnehmer: {USER_DICT.get(telegram_id)}"
     return response
 
 def _calculate_date(start_tag):
@@ -124,6 +143,18 @@ def _create_fast_event_keyboard():
     inline_keyboard = {"inline_keyboard": [keyboard]} # required format for Telegram
     return json.dumps(inline_keyboard)
 
+def _create_del_msg_keyboard():
+    """
+    'buttons': [{'payload': 'ja', 'title': 'ja'}, {'payload': 'nein', 'title': 'nein'}]
+    create correct format for inline_keyboard 
+        e.g.: {"inline_keyboard":[[{"text": "Hello", "callback_url": "Hello", "url": "", "callback_data": "Hello"},
+                {"text": "No", "callback_url": "Google", "url": "http://www.google.com/"}]]}
+    """
+    keyboard = [{"text": "Löschen", "callback_url": "/loeschen", "url": "", "callback_data": "/loeschen"}]
+    inline_keyboard = {"inline_keyboard": [keyboard]} # required format for Telegram
+    return json.dumps(inline_keyboard)
+
+
 def _add_participant(chat_id, message_id, name, original_message, inline_keyboard):
     """
     Edit original message to add new fasting participant.
@@ -148,5 +179,12 @@ def _remove_participant(chat_id, message_id, name, original_message, inline_keyb
     url += f"&reply_markup={inline_keyboard}"
     requests.get(url) # post msg to Telegram server
 
-def _save_telegram_id(user_id, name):
-    pass
+def _write_user_to_db(telegram_id, name):
+    with db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                INSERT INTO {os.environ.get('DB_PROD_LEVEL')}.users 
+                    (telegram_id, name, status_timestamp) 
+                VALUES  
+                    ({telegram_id}, '{name}', '{datetime.datetime.now()}')
+                """)

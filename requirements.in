@@ -1,3 +1,4 @@
 # for base functions
 requests==2.23.0
 python-dotenv==0.19.2
+psycopg2==2.9.3
