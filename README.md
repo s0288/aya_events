@@ -4,4 +4,9 @@ To do so, they can join a Telegram group that contains a chatbot for creating gr
 
 Run in virtualenv:
 - `docker build -t aya_group .`
-- `source .env && sudo TELEGRAM_TOKEN=$TELEGRAM_TOKEN docker run -e TELEGRAM_TOKEN -d aya_group`
+- ```
+    source .env && sudo TELEGRAM_TOKEN=$TELEGRAM_TOKEN docker run \
+        -e TELEGRAM_TOKEN \
+        -e DB=$DB \
+        -e DB_PROD_LEVEL=$DB_PROD_LEVEL -d aya_group
+    ```

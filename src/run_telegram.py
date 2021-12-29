@@ -24,7 +24,6 @@ def main(chat_id=None):
         try:
             ##### listen for new messages
             update, next_update_id = EventListener.get_update_and_next_update_id(next_update_id)
-            logging.info(f"update: {update}")
             if update:
                 # extract incoming message
                 chat_id, message, message_id, user_id, original_message = EventListener.extract_main(update)
