@@ -15,7 +15,7 @@ def create_tables():
         CREATE SCHEMA IF NOT EXISTS staging
         """,
         """
-        DROP TABLE staging.users; 
+        DROP TABLE IF EXISTS staging.users;
         CREATE TABLE staging.users (
             id SERIAL PRIMARY KEY,
             telegram_id BIGINT NOT NULL,
@@ -23,7 +23,7 @@ def create_tables():
             status_timestamp TIMESTAMP NOT NULL)
         """,
         """
-        INSERT INTO staging.users (telegram_id, name, status_timestamp) 
+        INSERT INTO staging.users (telegram_id, name, status_timestamp)
             VALUES  (459871623, 'tester1', '2021-12-29 16:24:52'),
                     (918237832, 'tester2', '2021-12-29 18:24:52')
         """,
@@ -32,6 +32,39 @@ def create_tables():
             id SERIAL PRIMARY KEY,
             telegram_id BIGINT NOT NULL,
             name VARCHAR(60) NOT NULL,
+            status_timestamp TIMESTAMP NOT NULL)
+        """,
+        """
+        DROP TABLE IF EXISTS staging.group_events;
+        CREATE TABLE staging.group_events (
+            id SERIAL PRIMARY KEY,
+            chat_id BIGINT NOT NUll,
+            event_id BIGINT NOT NULL,
+            event_name VARCHAR(60) NOT NULL,
+            telegram_id BIGINT NOT NULL,
+            msg_text VARCHAR(255) NOT NULL,
+            status_timestamp TIMESTAMP NOT NULL)
+        """,
+        """
+        INSERT INTO staging.group_events (chat_id, event_id, event_name,
+            telegram_id, msg_text, status_timestamp)
+            VALUES  (-123456789, 123, 'fast_create', 918237832,
+                        '/fasten di 12 12', '2021-01-15 16:24:52'),
+                    (-123456789, 126, 'fast_accept', 918237832,
+                        '/teilnehmen', '2021-01-15 18:24:52'),
+                    (-123456789, 129, 'fast_decline', 918237832,
+                        '/ablehnen', '2021-01-15 18:25:52'),
+                    (-123456789, 138, 'fast_delete', 918237832,
+                        '/loeschen', '2021-01-15 19:24:52')
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS prod.group_events (
+            id SERIAL PRIMARY KEY,
+            chat_id BIGINT NOT NUll,
+            event_id BIGINT NOT NULL,
+            event_name VARCHAR(60) NOT NULL,
+            telegram_id BIGINT NOT NULL,
+            msg_text VARCHAR(255) NOT NULL,
             status_timestamp TIMESTAMP NOT NULL)
         """
         )
