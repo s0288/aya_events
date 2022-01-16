@@ -6,6 +6,7 @@ import urllib
 import datetime
 import json
 import re
+import pytz
 import requests
 
 from utils import db_conn
@@ -73,16 +74,18 @@ def respond_to_input(chat_id, message, message_id, telegram_id, original_message
             _delete_message_from_telegram(chat_id, message_id)
             keyboard = _create_fast_event_keyboard()
             response_content = _send_message_to_event_telegram(chat_id, response, keyboard)
-            event_id, msg_text = _extract_response_content(response_content)
-            _write_event_to_db(chat_id, event_id, "fast_create", telegram_id, msg_text)
+            event_id, message = _extract_response_content(response_content)
+            _write_event_to_db(chat_id, event_id, "fast_create", telegram_id, message)
         elif first_word == '/teilnehmen':
             keyboard = _create_fast_event_keyboard()
             _add_participant(chat_id, message_id,
                 USER_DICT.get(telegram_id), original_message, keyboard)
+            _write_event_to_db(chat_id, message_id, "fast_accept", telegram_id, message)
         elif first_word == '/absagen':
             keyboard = _create_fast_event_keyboard()
             _remove_participant(chat_id, message_id,
                 USER_DICT.get(telegram_id), original_message, keyboard)
+            _write_event_to_db(chat_id, message_id, "fast_decline", telegram_id, message)
         elif first_word == '/loeschen':
             _delete_message_from_telegram(chat_id, message_id)
         else:
@@ -205,7 +208,7 @@ def _write_user_to_db(telegram_id, name):
                 INSERT INTO {os.environ.get('DB_PROD_LEVEL')}.users 
                     (telegram_id, name, status_timestamp) 
                 VALUES  
-                    ({telegram_id}, '{name}', '{datetime.datetime.now()}')
+                    ({telegram_id}, '{name}', '{datetime.datetime.now(tz=pytz.timezone('Europe/Berlin'))}')
                 """)
 
 def _extract_response_content(response_content):
@@ -237,6 +240,6 @@ def _write_event_to_db(chat_id, event_id, event_name, telegram_id, msg_text):
                 VALUES  
                     (
                         {chat_id}, {event_id}, '{event_name}', 
-                        {telegram_id}, '{msg_text}', '{datetime.datetime.now()}'
+                        {telegram_id}, '{msg_text}', '{datetime.datetime.now(tz=pytz.timezone('Europe/Berlin'))}'
                     )
             """)
