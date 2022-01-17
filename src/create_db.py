@@ -35,6 +35,35 @@ def create_tables():
             status_timestamp TIMESTAMP NOT NULL)
         """,
         """
+        DROP TABLE IF EXISTS staging.aya_events;
+        CREATE TABLE staging.aya_events (
+            id SERIAL PRIMARY KEY,
+            chat_id BIGINT NOT NUll,
+            event_id BIGINT NOT NULL,
+            event_name VARCHAR(60) NOT NULL,
+            telegram_id BIGINT NOT NULL,
+            msg_text VARCHAR(255) NOT NULL,
+            status_timestamp TIMESTAMP NOT NULL)
+        """,
+        """
+        INSERT INTO staging.aya_events (chat_id, event_id, event_name,
+            telegram_id, msg_text, status_timestamp)
+            VALUES  (918237832, 123, 'fast_start', 918237832,
+                        '/fasten di 12 12', '2021-01-15 16:24:52'),
+                    (918237832, 126, 'fast_end', 918237832,
+                        '/teilnehmen', '2021-01-15 18:24:52')
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS prod.aya_events (
+            id SERIAL PRIMARY KEY,
+            chat_id BIGINT NOT NUll,
+            event_id BIGINT NOT NULL,
+            event_name VARCHAR(60) NOT NULL,
+            telegram_id BIGINT NOT NULL,
+            msg_text VARCHAR(255) NOT NULL,
+            status_timestamp TIMESTAMP NOT NULL)
+        """,
+        """
         DROP TABLE IF EXISTS staging.group_events;
         CREATE TABLE staging.group_events (
             id SERIAL PRIMARY KEY,
