@@ -88,6 +88,12 @@ def respond_to_input(chat_id, message, message_id, telegram_id, original_message
             _write_event_to_db(chat_id, message_id, "fast_decline", telegram_id, message)
         elif first_word == '/loeschen':
             _delete_message_from_telegram(chat_id, message_id)
+        elif first_word == '/admin':
+            response = message.split('/admin ')[1]
+            _delete_message_from_telegram(chat_id, message_id)
+            response_content = _send_message_to_event_telegram(chat_id, response)
+            event_id, message = _extract_response_content(response_content)
+            _write_event_to_db(chat_id, event_id, "admin_msg", telegram_id, message)
         else:
             response = "Bitte schreibe Nachrichten gemäß der Regeln. "
             response += "Deine Nachricht wurde gelöscht.\n\n"
