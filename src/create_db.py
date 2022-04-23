@@ -47,7 +47,7 @@ def create_tables():
             timestamp_saved TIMESTAMP NOT NULL)
         """,
         """
-        INSERT INTO staging.aya_messages (telegram_id, chat_id, update_id, 
+        INSERT INTO staging.aya_messages (chat_id, telegram_id, update_id, 
             message_text, event_name, timestamp_received, timestamp_saved)
             VALUES  (918237832, 918237832, 123, '/fasten di 12 12', 
                         'fast_start', '2021-01-15 16:24:52', '2021-01-15 16:24:52'),
@@ -63,6 +63,33 @@ def create_tables():
             message_text VARCHAR(255) NOT NULL,
             event_name VARCHAR(60),
             timestamp_received TIMESTAMP NOT NULL,
+            timestamp_saved TIMESTAMP NOT NULL)
+        """,
+        """
+        DROP TABLE IF EXISTS staging.aya_events;
+        CREATE TABLE staging.aya_events (
+            id SERIAL PRIMARY KEY,
+            chat_id BIGINT NOT NUll,
+            telegram_id BIGINT NOT NULL,
+            event_name VARCHAR(60),
+            event_value FLOAT,
+            timestamp_saved TIMESTAMP NOT NULL)
+        """,
+        """
+        INSERT INTO staging.aya_events (chat_id, telegram_id, 
+            event_name, event_value, timestamp_saved)
+            VALUES  (918237832, 918237832, 'fast_end', 
+                        18.75, '2021-01-15 16:24:52'),
+                    (918237832, 918237832, 'fast_end',
+                        14.23, '2021-01-15 18:24:52')
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS prod.aya_events (
+            id SERIAL PRIMARY KEY,
+            chat_id BIGINT NOT NUll,
+            telegram_id BIGINT NOT NULL,
+            event_name VARCHAR(60),
+            event_value FLOAT,
             timestamp_saved TIMESTAMP NOT NULL)
         """,
         """
